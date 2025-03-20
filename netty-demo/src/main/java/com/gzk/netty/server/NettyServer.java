@@ -16,10 +16,10 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 public class NettyServer {
 
     public static void main(String[] args) {
-        new NettyServer().bing(7397);
+        new NettyServer().bind(7397);
     }
 
-    private void bing(int port) {
+    private void bind(int port) {
         //配置服务端NIO线程组
         //处理连接事件，一般设置1
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
