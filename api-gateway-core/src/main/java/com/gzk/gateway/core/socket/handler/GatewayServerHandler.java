@@ -1,31 +1,34 @@
-package com.gzk.gateway.core.session.handler;
+package com.gzk.gateway.core.socket.handler;
 
 import com.gzk.gateway.core.bind.IGenericReference;
-import com.gzk.gateway.core.session.Configuration;
+import com.gzk.gateway.core.session.GatewaySession;
+import com.gzk.gateway.core.session.GatewaySessionFactory;
+import com.gzk.gateway.core.socket.BaseHandler;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static org.apache.logging.log4j.message.MapMessage.MapFormat.JSON;
+import java.util.concurrent.ExecutionException;
 
 /**
  * @className: SessionServerHandler
- * @description: TODO
+ * @description: channel 处理器
  * @author: gzk
  * @since: 2025/3/20
  **/
-@Slf4j
-public class SessionServerHandler extends BaseHandler<FullHttpRequest> {
+public class GatewayServerHandler extends BaseHandler<FullHttpRequest> {
 
-    private final Configuration configuration;
+    private final Logger log = LoggerFactory.getLogger(GatewayServerHandler.class);
+    private final GatewaySessionFactory gatewaySessionFactory;
 
-    public SessionServerHandler(Configuration configuration) {
-        this.configuration = configuration;
+    public GatewayServerHandler(GatewaySessionFactory gatewaySessionFactory) {
+        this.gatewaySessionFactory = gatewaySessionFactory;
     }
 
     @Override
-    protected void session(ChannelHandlerContext channelHandlerContext, Channel channel, FullHttpRequest request) {
+    protected void session(ChannelHandlerContext channelHandlerContext, Channel channel, FullHttpRequest request) throws ExecutionException, InterruptedException {
         log.info("网关收到请求,request uri{}, method{}", request.uri(), request.method());
 
         //过滤favicon.ico请求
@@ -34,8 +37,10 @@ public class SessionServerHandler extends BaseHandler<FullHttpRequest> {
             return;
         }
 
-        IGenericReference genericReference = configuration.getGenericReference("sayHi");
-        String result = genericReference.$invoke("test");
+        GatewaySession gatewaySession = gatewaySessionFactory.openSession(request.uri());
+
+        IGenericReference reference = gatewaySession.getMapper(request.uri());
+        String result = reference.$invoke("test");
 
         // 返回信息处理
         DefaultFullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);

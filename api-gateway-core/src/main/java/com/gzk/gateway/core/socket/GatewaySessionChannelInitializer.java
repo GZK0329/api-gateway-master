@@ -1,6 +1,7 @@
-package com.gzk.gateway.core.session;
+package com.gzk.gateway.core.socket;
 
-import com.gzk.gateway.core.session.handler.SessionServerHandler;
+import com.gzk.gateway.core.session.GatewaySessionFactory;
+import com.gzk.gateway.core.socket.handler.GatewayServerHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
@@ -15,12 +16,12 @@ import io.netty.handler.codec.string.StringEncoder;
  * @author: gzk
  * @since: 2025/3/20
  **/
-public class SessionChannelInitializer extends ChannelInitializer<SocketChannel> {
+public class GatewaySessionChannelInitializer extends ChannelInitializer<SocketChannel> {
 
-    private final Configuration configuration;
+    private final GatewaySessionFactory gatewaySessionFactory;
 
-    public SessionChannelInitializer(Configuration configuration) {
-        this.configuration = configuration;
+    public GatewaySessionChannelInitializer(GatewaySessionFactory gatewaySessionFactory) {
+        this.gatewaySessionFactory = gatewaySessionFactory;
     }
 
     @Override
@@ -31,6 +32,6 @@ public class SessionChannelInitializer extends ChannelInitializer<SocketChannel>
                 .addLast(new HttpObjectAggregator(1024 * 1024))
                 .addLast(new StringEncoder())
                 .addLast(new StringDecoder())
-                .addLast(new SessionServerHandler(configuration));
+                .addLast(new GatewayServerHandler(gatewaySessionFactory));
     }
 }

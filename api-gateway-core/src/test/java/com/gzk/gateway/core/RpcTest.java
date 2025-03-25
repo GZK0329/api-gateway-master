@@ -1,20 +1,15 @@
 package com.gzk.gateway.core;
 
-import com.gzk.gateway.core.session.Configuration;
+import com.gzk.gateway.core.bind.Configuration;
+import com.gzk.gateway.core.mapping.HttpCommandType;
+import com.gzk.gateway.core.mapping.HttpStatement;
+import com.gzk.gateway.core.session.defaults.DefaultGatewaySessionFactory;
+import com.gzk.gateway.core.socket.GatewaySocketServer;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.ApplicationConfig;
-import org.apache.dubbo.config.ReferenceConfig;
-import org.apache.dubbo.config.RegistryConfig;
-import org.apache.dubbo.config.bootstrap.DubboBootstrap;
-import org.apache.dubbo.config.utils.ReferenceConfigCache;
-import org.apache.dubbo.rpc.service.GenericService;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
-
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 /**
@@ -26,48 +21,40 @@ import java.util.concurrent.Future;
 @Slf4j
 public class RpcTest {
 
+
+    /**
+     * 测试：http://localhost:7899/test/helloworld
+     */
     @Test
-    public void testRpc(){
-        ApplicationConfig application = new ApplicationConfig();
-        application.setName("api-gateway-test");
-        application.setQosEnable(false);
+    public void test_gateway() throws InterruptedException, ExecutionException {
+        // 1. 创建配置信息加载注册
+        Configuration configuration = new Configuration();
+        HttpStatement httpStatement = new HttpStatement(
+                "api-gateway-test",
+                "com.gzk.test.api-test",
+                "helloworld",
+                "/test/helloworld",
+                HttpCommandType.GET);
+        configuration.addMapper(httpStatement);
 
-        RegistryConfig registry = new RegistryConfig();
-        registry.setAddress("zookeeper://127.0.0.1:2181");
-        registry.setRegister(false);
+        // 2. 基于配置构建会话工厂
+        DefaultGatewaySessionFactory gatewaySessionFactory = new DefaultGatewaySessionFactory(configuration);
 
-        ReferenceConfig<GenericService> reference = new ReferenceConfig<>();
-        reference.setInterface("cn.bugstack.gateway.rpc.IActivityBooth");
-        reference.setVersion("1.0.0");
-        reference.setGeneric("true");
+        // 3. 创建启动网关网络服务
+        GatewaySocketServer server = new GatewaySocketServer(gatewaySessionFactory);
 
-        DubboBootstrap bootstrap = DubboBootstrap.getInstance();
-        bootstrap.application(application)
-                .registry(registry)
-                .reference(reference)
-                .start();
+        Future<Channel> future = Executors.newFixedThreadPool(2).submit(server);
+        Channel channel = future.get();
 
-        ReferenceConfigCache cache = ReferenceConfigCache.getCache();
-        GenericService genericService = cache.get(reference);
+        if (null == channel) throw new RuntimeException("netty server start error channel is null");
 
-        Object result = genericService.$invoke("sayHi", new String[]{"java.lang.String"}, new Object[]{"world"});
+        while (!channel.isActive()) {
+            log.info("netty server gateway start ing ...");
+            Thread.sleep(500);
+        }
+        log.info("netty server gateway start Done! {}", channel.localAddress());
 
-        System.out.println(result);
-
-
+        Thread.sleep(Long.MAX_VALUE);
     }
 
-//    @Test
-//    public void testGenericReference() throws InterruptedException, ExecutionException {
-//        Configuration configuration = new Configuration();
-//        configuration.addGenericReference("api-gateway-test", "cn.bugstack.gateway.rpc.IActivityBooth", "sayHi");
-//
-//        GenericReferenceSessionFactoryBuilder builder = new GenericReferenceSessionFactoryBuilder();
-//        Future<Channel> future = builder.build(configuration);
-//
-//        log.info("服务启动完成 {}", future.get().id());
-//
-//        Thread.sleep(Long.MAX_VALUE);
-//
-//    }
 }
