@@ -8,6 +8,8 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPubSub;
 
+import javax.annotation.Resource;
+
 /**
  * @className: XRedisSubscriber
  * @description: TODO
@@ -18,7 +20,7 @@ import redis.clients.jedis.JedisPubSub;
 @Slf4j
 public class XRedisSubscriber {
 
-    @Autowired
+    @Resource
     private Jedis jedis;
 
     public void subscribe(String channel) {

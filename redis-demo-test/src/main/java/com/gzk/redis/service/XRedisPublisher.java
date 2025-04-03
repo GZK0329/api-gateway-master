@@ -5,6 +5,8 @@ import org.springframework.stereotype.Component;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
 
+import javax.annotation.Resource;
+
 /**
  * @className: XRedisPublisher
  * @description: TODO
@@ -14,7 +16,7 @@ import redis.clients.jedis.JedisCluster;
 @Component
 public class XRedisPublisher {
 
-    @Autowired
+    @Resource
     private Jedis jedis;
 
     public void publish(String channel, String message) {

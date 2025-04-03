@@ -3,6 +3,7 @@ package com.gzk.redis.config;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 import redis.clients.jedis.*;
 
 import javax.annotation.Resource;
@@ -25,6 +26,7 @@ public class RedisConfig {
 
     //单点模式
     @Bean
+    @Scope("prototype")
     public Jedis jedis(){
         Jedis jedis = new Jedis(xRedisConfig.getHost(), xRedisConfig.getPort());
         jedis.select(0);
